@@ -1,8 +1,10 @@
 package com.hnguyen387.jpa_persistence.ch04.repos;
 
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import com.hnguyen387.jpa_persistence.ch04.models.User;
 
@@ -27,10 +29,12 @@ public interface UserRepository extends JpaRepository<User, Long>{
 	List<User> findByUsernameStartingWith(String start);
 	List<User> findByUsernameEndingWith(String end);
 	List<User> findByActive(boolean active);
-	List<User> findByRegistrationDateInIn(Collection<LocalDate> dates);
+	List<User> findByRegistrationDateIn(Collection<LocalDate> dates);
 	List<User> findByRegistrationDateNotIn(Collection<LocalDate> dates);
 	/*Page, sort, limit*/
-	User findFirstByOrderByUsernameDesc(String username);
-	List<User> findFirst2ByOrderByUsernameDesc(String username);
+	User findFirstByUsernameOrderByUsernameDesc(String username);
+	List<User> findFirst2ByUsernameOrderByUsernameDesc(String username);
 	List<User> findTop10ByOrderByRegistrationDateAsc();
+	@Query(value = "select u.email from Users u", nativeQuery = true)
+	Set<String> getAllEmails();
 }
