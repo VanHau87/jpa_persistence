@@ -22,20 +22,20 @@ public class UserServiceImpl implements UserService{
 	
 	@Transactional
 	@Override
-	public void saveAll(List<UserDto> dtos) {
+	public int saveAll(List<UserDto> dtos) {
 		List<User> users = new ArrayList<>();
 		for (UserDto dto : dtos) {
 			User user = new User();
 			BeanUtils.copyProperties(dto, user, "id");
 			users.add(user);
 		}
-		repository.saveAllAndFlush(users);
+		List<User> savedUsers = repository.saveAllAndFlush(users);
+		return savedUsers.size();
 	}
 
 	@Override
 	public Set<String> getAllEmails() {
 		return repository.getAllEmails();
 	}
-	
 	
 }

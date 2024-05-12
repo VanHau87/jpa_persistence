@@ -14,10 +14,15 @@ import org.apache.poi.ss.usermodel.CellValue;
 import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
+import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 
 import com.hnguyen387.jpa_persistence.ch04.dtos.UserDto;
+
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
 
 public class ExcelHelper {
 	private static final String POSITIVE_Y = "Y";
@@ -33,7 +38,8 @@ public class ExcelHelper {
 		}
         setter.accept(value, object);
     }
-	public static Object readCellData(Cell cell) {
+	public static Object readCellData(Row row, int cellNumber) {
+		Cell cell = row.getCell(cellNumber);
 		Object value = null;
 		FormulaEvaluator evaluator = cell.getSheet().getWorkbook().getCreationHelper().createFormulaEvaluator();
         switch (cell.getCellType()) {
@@ -172,4 +178,49 @@ public class ExcelHelper {
 			sheet.autoSizeColumn(columns[i]);
 		}
 	}
+	public static Validator buildValidator() {
+		ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+		return factory.getValidator();
+	}
+	public static void createHeader(Row headerRow, String headers) {
+		String[] titles = headers.split(",");
+		for (int i = 0; i < titles.length; i++) {
+			String title = titles[i];
+			headerRow.createCell(i).setCellValue(title);
+		}
+	}
+	public static void copyRow(Row sourceRow, Row newRow) {
+        for (int i = 0; i < sourceRow.getLastCellNum(); i++) {
+            Cell oldCell = sourceRow.getCell(i);
+            if (oldCell != null) {
+                Cell newCell = newRow.createCell(i);
+                copyCell(oldCell, newCell);
+            }
+        }
+    }
+	private static void copyCell(Cell oldCell, Cell newCell) {
+        switch (oldCell.getCellType()) {
+            case STRING:
+                newCell.setCellValue(oldCell.getStringCellValue());
+                break;
+            case NUMERIC:
+                newCell.setCellValue(oldCell.getNumericCellValue());
+                break;
+            case BOOLEAN:
+                newCell.setCellValue(oldCell.getBooleanCellValue());
+                break;
+            case FORMULA:
+                newCell.setCellFormula(oldCell.getCellFormula());
+                break;
+            case BLANK:
+                newCell.setBlank();
+                break;
+            case ERROR:
+                newCell.setCellErrorValue(oldCell.getErrorCellValue());
+                break;
+            default:
+                newCell.setCellValue(oldCell.toString());
+                break;
+        }
+    }
 }

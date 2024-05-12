@@ -2,13 +2,12 @@ package com.hnguyen387.jpa_persistence.ch04.dtos;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.List;
 
 import com.hnguyen387.jpa_persistence.ch04.utils.CellError;
 import com.hnguyen387.jpa_persistence.ch04.validation.ValidUser;
 
 @ValidUser
-public class UserDto {
+public class UserDto extends ImportData{
 	private Long id;
 	private String username;
 	private LocalDate registrationDate;
@@ -16,13 +15,13 @@ public class UserDto {
 	private boolean emailExist;
 	private int level;
 	private Boolean active;
-	private List<CellError> errMessage;
-	public Long getId() {
-		return id;
-	}
 	
 	public UserDto() {
-		errMessage = new ArrayList<>();
+		super(new ArrayList<CellError>());
+	}
+
+	public Long getId() {
+		return id;
 	}
 
 	public void setId(Long id) {
@@ -77,12 +76,4 @@ public class UserDto {
 		this.active = active;
 	}
 
-	public List<CellError> getErrMessage() {
-		return errMessage;
-	}
-
-	public void setErrMessage(List<CellError> errMessage) {
-		this.errMessage = errMessage;
-	}
-	
 }

@@ -6,6 +6,6 @@ import java.util.Set;
 import com.hnguyen387.jpa_persistence.ch04.dtos.UserDto;
 
 public interface UserService {
-	void saveAll(List<UserDto> dtos);
+	int saveAll(List<UserDto> dtos);
 	Set<String> getAllEmails();
 }

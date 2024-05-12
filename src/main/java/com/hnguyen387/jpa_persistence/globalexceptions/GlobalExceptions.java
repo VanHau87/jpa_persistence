@@ -26,8 +26,8 @@ public class GlobalExceptions {
 	public ResponseEntity<ErrorDetails> handleUpdatedException(UpdatedException exception) {
 		return handleException(exception, HttpStatus.NOT_MODIFIED);
 	}
-	@ExceptionHandler(ExcelException.class)
-	public ResponseEntity<ErrorDetails> handleExcelException(ExcelException exception) {
+	@ExceptionHandler(ImportException.class)
+	public ResponseEntity<ErrorDetails> handleExcelException(ImportException exception) {
 		return handleException(exception, HttpStatus.EXPECTATION_FAILED);
 	}
 }
