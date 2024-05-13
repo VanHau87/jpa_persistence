@@ -17,23 +17,23 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbookType;
 import org.springframework.stereotype.Component;
 
-import com.hnguyen387.jpa_persistence.ch04.dtos.UserDto;
+import com.hnguyen387.jpa_persistence.ch04.dtos.ImportedUser;
 import com.hnguyen387.jpa_persistence.globalexceptions.ImportException;
 
 @Component
-public class WriteUserStrategy implements WriteStrategy<UserDto>{
+public class WriteUserStrategy implements WriteStrategy<ImportedUser>{
 	private final String FILE_NAME = "Errors_Import_User_";
 	private final String DATE_TIME_PATTERN = "yyyy-MM-dd'T'HH-mm-ss";
 	private final String EXTENTION = ".xlsx";
 	
-	public void write(Path path, List<UserDto> dtos) {
+	public void write(Path path, List<ImportedUser> dtos) {
 		try (Workbook workbook = new XSSFWorkbook(XSSFWorkbookType.XLSX)){
 			Sheet sheet = workbook.createSheet("ErrUsers");
 			Row headerRow = sheet.createRow(0);
 			String headers = "No, Username, RegistrationDate, Email, Level, Active, Message";
 			ExcelHelper.createHeader(headerRow, headers);
 			int rowNum = 1;
-			for (UserDto userDto : dtos) {
+			for (ImportedUser userDto : dtos) {
 				Row row = sheet.createRow(rowNum++);
 				createRow(row, userDto, workbook);
 			}
@@ -49,7 +49,7 @@ public class WriteUserStrategy implements WriteStrategy<UserDto>{
 		}
 	}
 	
-	private void createRow(Row row, UserDto dto, Workbook workbook) {
+	private void createRow(Row row, ImportedUser dto, Workbook workbook) {
 		int i = 0;
 		row.createCell(i++).setCellValue(dto.getId());
 		row.createCell(i++).setCellValue(dto.getUsername());
@@ -59,7 +59,7 @@ public class WriteUserStrategy implements WriteStrategy<UserDto>{
 		dateCell.setCellStyle(ExcelHelper.setFormatForCell(workbook, "yyyy-MM-dd"));
 		row.createCell(i++).setCellValue(dto.getEmail());
 		row.createCell(i++).setCellValue(dto.getLevel());
-		row.createCell(i++).setCellValue(dto.getActive());
+		row.createCell(i++).setCellValue(dto.isActive());
 		String messages = dto.getErrMessage()
 					.stream()
 					.map(t -> t.message)

@@ -20,7 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.hnguyen387.jpa_persistence.ch04.dtos.ImportResult;
-import com.hnguyen387.jpa_persistence.ch04.dtos.UserDto;
+import com.hnguyen387.jpa_persistence.ch04.dtos.ImportedUser;
 import com.hnguyen387.jpa_persistence.ch04.services.UserService;
 
 import jakarta.validation.ConstraintViolation;
@@ -36,14 +36,14 @@ public class ReadUserStrategy implements ReadStrategy{
         int count = 0;
         int columns = 0;
         int successfulRows = 0;
-        List<UserDto> users = new ArrayList<>();  
+        List<ImportedUser> users = new ArrayList<>();  
 		List<Row> rowErrors = new ArrayList<>();
 		Set<String> emails = userService.getAllEmails();
 		Validator validator = buildValidator();
         while (iterator.hasNext()) {
 			Row row = iterator.next();
 			columns = 0;
-			UserDto dto = new UserDto();
+			ImportedUser dto = new ImportedUser();
 			var id = parseLong(readCellData(row, columns++));
 			applyValue(id, dto, (value, user) -> user.setId((long)value));
 			var username = String.valueOf(readCellData(row, columns++)).trim();
@@ -59,7 +59,7 @@ public class ReadUserStrategy implements ReadStrategy{
 			if (emails.contains(email)) {
 				dto.setEmailExist(true);
 			} 
-			validateUserDto(validator, dto);
+			validateDto(validator, dto);
 			if (dto.getErrMessage().size() == 0) {
 				users.add(dto);
 				if (++count%20 == 0) {
@@ -80,10 +80,10 @@ public class ReadUserStrategy implements ReadStrategy{
         }
 		return new ImportResult(successfulRows, columns, rowErrors);
 	}
-	private void validateUserDto(Validator validator, UserDto dto) {
-		Set<ConstraintViolation<UserDto>> violations = validator.validate(dto);
+	private void validateDto(Validator validator, ImportedUser dto) {
+		Set<ConstraintViolation<ImportedUser>> violations = validator.validate(dto);
 		if (!violations.isEmpty()) {
-			for (ConstraintViolation<UserDto> violation : violations) {
+			for (ConstraintViolation<ImportedUser> violation : violations) {
                 CellError error = new CellError(violation.getMessage());
                 dto.getErrMessage().add(error);
             }

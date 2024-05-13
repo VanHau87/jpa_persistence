@@ -18,7 +18,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 
-import com.hnguyen387.jpa_persistence.ch04.dtos.UserDto;
+import com.hnguyen387.jpa_persistence.ch04.dtos.ImportedUser;
 
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
@@ -31,7 +31,7 @@ public class ExcelHelper {
 	private static final String NEGATIVE_NO = "NO";
 	
 	
-	public static void applyValue(Object value, UserDto object, BiConsumer<Object, UserDto> setter) {
+	public static void applyValue(Object value, ImportedUser object, BiConsumer<Object, ImportedUser> setter) {
 		if (value instanceof CellError error) {
 			object.getErrMessage().add(error);
 			return;

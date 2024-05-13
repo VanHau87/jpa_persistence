@@ -3,16 +3,16 @@ package com.hnguyen387.jpa_persistence.ch04.validation;
 import java.time.LocalDate;
 import java.util.regex.Pattern;
 
-import com.hnguyen387.jpa_persistence.ch04.dtos.UserDto;
+import com.hnguyen387.jpa_persistence.ch04.dtos.ImportedUser;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
-public class UserValidation implements ConstraintValidator<ValidUser, UserDto>{
+public class UserValidation implements ConstraintValidator<ValidUser, ImportedUser>{
 	private static final String EMAIL_REGEX = 
 			"^(?=.{1,64}@)[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)*@[^-][A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)*(\\.[A-Za-z]{2,})$";
 	@Override
-	public boolean isValid(UserDto user, ConstraintValidatorContext context) {
+	public boolean isValid(ImportedUser user, ConstraintValidatorContext context) {
 		boolean valid = true;
 		if (user != null) {
 			String username = user.getUsername();

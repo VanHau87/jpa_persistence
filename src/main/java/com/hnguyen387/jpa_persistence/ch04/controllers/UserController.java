@@ -3,7 +3,8 @@ package com.hnguyen387.jpa_persistence.ch04.controllers;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.JpaSort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -11,9 +12,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.hnguyen387.jpa_persistence.ch04.dtos.PageUser;
+import com.hnguyen387.jpa_persistence.ch04.dtos.PagingAndSortingRecords.MultiSortedPageUsers;
+import com.hnguyen387.jpa_persistence.ch04.dtos.SortedPageUser;
+import com.hnguyen387.jpa_persistence.ch04.dtos.UserDto;
 import com.hnguyen387.jpa_persistence.ch04.models.User;
 import com.hnguyen387.jpa_persistence.ch04.repos.UserRepository;
+import com.hnguyen387.jpa_persistence.ch04.services.UserService;
 
 @RestController
 @RequestMapping("ch04/users")
@@ -21,11 +25,49 @@ public class UserController {
 	
 	@Autowired
 	private UserRepository repository;
+	@Autowired
+	private UserService userService;
 	
-	@PostMapping("test")
-	public ResponseEntity<List<User>> testJpaMethods(@RequestBody PageUser page){
-		List<User> users = repository.findByActive(page.isActive, PageRequest.of(page.pageNumber, page.pageSize));
+	@PostMapping("page/sort/v1")
+	public ResponseEntity<List<UserDto>> findByActiveWithPagable(@RequestBody SortedPageUser page){
+		List<UserDto> users = userService.findByActive(page);
+		return new ResponseEntity<List<UserDto>>(users, HttpStatus.OK);
+	}
+	@PostMapping("page/sort/v2")
+	public ResponseEntity<List<UserDto>> findByActiveWithMultiSortedPagable(@RequestBody MultiSortedPageUsers page){
+		List<UserDto> users = userService.findByActiveMultiSort(page);
+		return new ResponseEntity<List<UserDto>>(users, HttpStatus.OK);
+	}
+	@PostMapping("queries/v1")
+	public ResponseEntity<Long> testCountByActiveAndLevel(@RequestBody UserDto dto){
+		long count = repository.countByActiveAndByLevel(dto.isActive(), dto.getLevel());
+		return new ResponseEntity<Long>(count, HttpStatus.OK);
+	}
+	@PostMapping("queries/v2")
+	public ResponseEntity<List<User>> testFindByActiveAndLevel(@RequestBody UserDto dto){
+		List<User> users = repository.findByActiveAndByLevel(dto.isActive(), dto.getLevel());
 		return new ResponseEntity<List<User>>(users, HttpStatus.OK);
 	}
-	
+	@PostMapping("queries/v3")
+	public ResponseEntity<Long> testCountByLevel(@RequestBody UserDto dto){
+		long count = repository.countByLevel(dto.getLevel());
+		return new ResponseEntity<Long>(count, HttpStatus.OK);
+	}
+	@PostMapping("queries/v4")
+	public ResponseEntity<List<Object[]>> testFindByNameAndThenSort(@RequestBody UserDto dto){
+		List<Object[]> results = repository.findByNameAndThenSort(dto.getUsername(), Sort.by("username"));
+		return new ResponseEntity<List<Object[]>>(results, HttpStatus.OK);
+	}
+	@PostMapping("queries/v5")
+	public ResponseEntity<List<Object[]>> testFindByNameAndThenSort_V1(@RequestBody UserDto dto){
+		List<Object[]> results = repository.findByNameAndThenSort(dto.getUsername(), 
+				Sort.by("email_length").descending());
+		return new ResponseEntity<List<Object[]>>(results, HttpStatus.OK);
+	}
+	@PostMapping("queries/v6")
+	public ResponseEntity<List<Object[]>> testFindByNameAndThenSort_V2(@RequestBody UserDto dto){
+		List<Object[]> results = repository.findByNameAndThenSort(dto.getUsername(), 
+				JpaSort.unsafe("LENGTH(u.email)"));
+		return new ResponseEntity<List<Object[]>>(results, HttpStatus.OK);
+	}
 }
