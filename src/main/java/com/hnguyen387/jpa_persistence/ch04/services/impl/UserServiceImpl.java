@@ -53,9 +53,9 @@ public class UserServiceImpl implements UserService{
 	@Override
 	public List<UserDto> findByActive(SortedPageUser sortedPage) {
 		UserDto dto = sortedPage.dto;
-		boolean isActive = Optional.ofNullable(dto)
-				.map(UserDto::isActive)
-				.orElse(false);
+		boolean isActive = Optional.ofNullable(dto) //check null
+				.map(UserDto::isActive) //convert UserDto to boolean 
+				.orElse(false);//if UserDto null, return false 
 		PageInfo info = sortedPage.info;
 		Sort.Direction direction = setSortedDirection(info.direction);
 		Pageable page = PageRequest.of(info.number, info.size, direction, info.sortBy);
@@ -83,13 +83,19 @@ public class UserServiceImpl implements UserService{
 	@Override
 	public List<UserDto> findByActiveMultiSort(MultiSortedPageUsers multiSortedPage) {
 		var dto = multiSortedPage.dto();
-		boolean isActive = Optional.ofNullable(dto).map(UserDto::isActive).orElse(false);
-		MultiSortedPageInfo info = multiSortedPage.info();
-		Order[] orders = setMultiSortDirection(multiSortedPage.info().sorts());
+		boolean isActive = Optional.ofNullable(dto)
+				.map(user -> user.isActive())
+				.orElse(false);
+		var info = multiSortedPage.info();
+		MultiSortedPageInfo pageInfo =	Optional.ofNullable(info)
+				.map(page -> page)
+				.orElse(new MultiSortedPageInfo(0, 10, null));
+		Order[] orders = setMultiSortDirection(pageInfo.sorts());
 		Pageable page = PageRequest.of(info.number(), info.size(), Sort.by(orders));
-		return repository.findByActive(isActive, page).stream()
-				.map(this::convertToDto)
-				.toList();
+		return repository.findByActive(isActive, page) //List<User>
+				.stream() //Stream<User>
+				.map(user -> convertToDto(user)) //Stream<UserDto>
+				.toList(); //List<UserDto>
 	}
 
 	private Order[] setMultiSortDirection(List<SortedField> sorts) {
