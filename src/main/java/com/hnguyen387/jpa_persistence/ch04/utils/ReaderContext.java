@@ -15,6 +15,7 @@ import com.hnguyen387.jpa_persistence.globalexceptions.ImportException;
 
 public class ReaderContext {
 	private ReadStrategy readStrategy;
+	private ExcelHelper excelHelper;
 
 	public ReaderContext(ReadStrategy readStrategy) {
 		this.readStrategy = readStrategy;
@@ -27,7 +28,9 @@ public class ReaderContext {
 	public void setReadStrategy(ReadStrategy readStrategy) {
 		this.readStrategy = readStrategy;
 	}
-	
+	public void initializeHelper(Workbook workbook) {
+        this.excelHelper = ExcelHelper.createWithWorkbook(workbook);
+    }
 	public ImportResult readFile(MultipartFile file) {
 		return readFile(file, 0);
 	}
@@ -37,13 +40,14 @@ public class ReaderContext {
 	public ImportResult readFile(MultipartFile file, int at, boolean skipHeader) {
 		try (InputStream input = file.getInputStream();
 			Workbook workbook = new XSSFWorkbook(input)) {
+			initializeHelper(workbook);
 			Sheet sheet = workbook.getSheetAt(at);
 			Iterator<Row> iterator = sheet.iterator();
 			if (skipHeader) {
 				if (iterator.hasNext())
 		        	iterator.next();
 			}
-			return readStrategy.read(iterator);
+			return readStrategy.read(iterator, excelHelper);
 		} catch (IOException e) {
 			throw new ImportException(String.format("Failed to import data: %s", e.getMessage()));
 		}

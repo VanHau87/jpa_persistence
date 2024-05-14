@@ -6,190 +6,172 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
-import java.util.function.BiConsumer;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellValue;
 import org.apache.poi.ss.usermodel.CreationHelper;
+import org.apache.poi.ss.usermodel.DataFormat;
 import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 
-import com.hnguyen387.jpa_persistence.ch04.dtos.ImportedUser;
-
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
 
 public class ExcelHelper {
-	private static final String POSITIVE_Y = "Y";
-	private static final String POSITIVE_YES = "YES";
-	private static final String NEGATIVE_N = "N";
-	private static final String NEGATIVE_NO = "NO";
-	
-	
-	public static void applyValue(Object value, ImportedUser object, BiConsumer<Object, ImportedUser> setter) {
-		if (value instanceof CellError error) {
-			object.getErrMessage().add(error);
-			return;
-		}
-        setter.accept(value, object);
+	private static final Map<String, Boolean> BOOLEAN_MAP = new HashMap<>();
+	private final Map<Short, CellStyle> styleCache = new HashMap<>();
+	private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+	static {
+        BOOLEAN_MAP.put("Y", true);
+        BOOLEAN_MAP.put("YES", true);
+        BOOLEAN_MAP.put("TRUE", true);
+        BOOLEAN_MAP.put("N", false);
+        BOOLEAN_MAP.put("NO", false);
+        BOOLEAN_MAP.put("FALSE", false);
     }
-	public static Object readCellData(Row row, int cellNumber) {
+	private FormulaEvaluator evaluator;
+	
+	public ExcelHelper() {
+	}
+	
+	public ExcelHelper(Workbook workbook) {
+		this.evaluator = workbook.getCreationHelper().createFormulaEvaluator();
+	}
+	// Factory method to create ExcelHelper with Workbook
+    public static ExcelHelper createWithWorkbook(Workbook workbook) {
+        return new ExcelHelper(workbook);
+    }
+
+    // Factory method to create ExcelHelper without Workbook
+    public static ExcelHelper create() {
+        return new ExcelHelper();
+    }
+	public Object readCell(Row row, int cellNumber) {
 		Cell cell = row.getCell(cellNumber);
-		Object value = null;
-		FormulaEvaluator evaluator = cell.getSheet().getWorkbook().getCreationHelper().createFormulaEvaluator();
-        switch (cell.getCellType()) {
-            case STRING:
-                value = cell.getStringCellValue();
-                break;
-            case NUMERIC:
-                if (DateUtil.isCellDateFormatted(cell)) {
-                    value = cell.getDateCellValue();
-                } else {
-                    value = cell.getNumericCellValue();
-                }
-                break;
-            case BOOLEAN:
-                value = cell.getBooleanCellValue();
-                break;
-            case FORMULA:
-                value = handleFormulaCell(cell, evaluator);
-                break;
-            case BLANK:
-                value = "";
-                break;
-            case ERROR:
-            	byte errCode = cell.getErrorCellValue();
-                value = new CellError(String.format("Cell error with error code: %d", (int)errCode));
-                break;
-            default:
-                value = new CellError("Unknown cell type");
-                break;
-        }
-        return value;
+		if(cell == null)
+			return null;
+		return getCellValue(cell);
     }
-	public static Object handleFormulaCell(Cell cell, FormulaEvaluator evaluator) {
-		Object value = null;
-        CellValue cellValue = evaluator.evaluate(cell);
-        switch (cellValue.getCellType()) {
-            case STRING:
-            	value = cellValue.getStringValue();
-                break;
-            case NUMERIC:
-            	if (DateUtil.isCellDateFormatted(cell)) {
-                    value = DateUtil.getJavaDate(cellValue.getNumberValue());
-                } else {
-                    value = cellValue.getNumberValue();
-                }
-            case BOOLEAN:
-            	value = cellValue.getBooleanValue();
-                break;
-            case ERROR:
-            	byte errCode = cellValue.getErrorValue();
-            	value = new CellError(String.format("Formula error with error code : %d", (int) errCode));
-                break;
-            default:
-                value = new CellError("Unknown formula result type");
-                break;
-        }
-        return value;
+	private Object getCellValue(Cell cell) {
+		return switch (cell.getCellType()) {
+	        case STRING -> cell.getStringCellValue().trim();
+	        case NUMERIC -> DateUtil.isCellDateFormatted(cell) ? cell.getDateCellValue() : cell.getNumericCellValue();
+	        case BOOLEAN -> cell.getBooleanCellValue();
+	        case FORMULA -> handleFormulaCell(cell);
+	        case BLANK -> String.valueOf("");
+	        case ERROR -> new CellError(String.format("Cell error with error code: %d", (int) cell.getErrorCellValue()));
+	        default -> new CellError("Unknown cell type");
+		};
+	}
+	public Object handleFormulaCell(Cell cell) {
+		CellValue cellValue = evaluator.evaluate(cell);
+		return switch (cellValue.getCellType()) {
+	        case STRING -> cellValue.getStringValue().trim();
+	        case NUMERIC -> DateUtil.isCellDateFormatted(cell) ? DateUtil.getJavaDate(cellValue.getNumberValue()) : cellValue.getNumberValue();
+	        case BOOLEAN -> cellValue.getBooleanValue();
+	        case ERROR -> new CellError(String.format("Formula error with error code : %d", (int) cellValue.getErrorValue()));
+	        default -> new CellError("Unknown formula result type");
+		};
     }
-	public static Object parseBoolean(Object cellValue) {
+	public Object parseBoolean(Object cellValue) {
 		if (cellValue instanceof CellError error) {
 			return error;
 		}
 		if (cellValue instanceof Boolean value) {
 			return value;
 		}
-		String message = "Value must be: YES, Y, NO, N, TRUE, FALSE";
+		String message = "Invalid input type - type must be: YES, NO, Y, N, TRUE, FALSE";
 		if (cellValue instanceof String value) {
-			if (value.equalsIgnoreCase(POSITIVE_Y) || value.equalsIgnoreCase(POSITIVE_YES)) {
-				return true;
-			} else if (value.equalsIgnoreCase(NEGATIVE_N) || value.equalsIgnoreCase(NEGATIVE_NO)) {
-				return false;
-			} else {
-				return new CellError(message);
-			}
+			Boolean booleanValue = BOOLEAN_MAP.get(value.toUpperCase());
+			if (booleanValue != null) {
+                return booleanValue;
+            } else {
+                return new CellError(message);
+            }
 		}
 		return new CellError(message);
 	}
-	public static Object parseDouble(Object cellValue) {
+	public Object parseDouble(Object cellValue) {
 		if (cellValue instanceof CellError error) {
 			return error;
 		}
 		if (cellValue instanceof Double value) {
             return value;
         }
-        try {
-            return Double.parseDouble(cellValue.toString());
-        } catch (Exception e) {
-            return new CellError(e.getMessage());
-        }
+		if (cellValue instanceof String value) {
+	        try {
+	            return Double.parseDouble(value);
+	        } catch (NumberFormatException e) {
+	            return new CellError("Invalid double format: " + e.getMessage());
+	        }
+	    }
+		return new CellError("Unsupported type for Double parsing");
     }
-	public static Object parseLong(Object cellValue) {
+	public Object parseLong(Object cellValue) {
 		var value = parseDouble(cellValue);
 		if (value instanceof Double valueLong) {
 			return valueLong.longValue();
 		}
 		return value;
 	}
-	public static Object parseInt(Object cellValue) {
+	public Object parseInt(Object cellValue) {
         var value = parseDouble(cellValue);
 		if (value instanceof Double valueInt) {
 			return valueInt.intValue();
 		}
 		return value;
 	}
-	public static Object parseDate(Object cellValue) {
+	public Object parseDate(Object cellValue) {
 		if (cellValue instanceof CellError error) {
 			return error;
 		}
 		Date date = null;
-		LocalDate localDate = null;
 		if (cellValue instanceof Date value) {
 			date = value;
-		} else {
-			String dateStr = cellValue.toString();
-			DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		} else if (cellValue instanceof String value) {
 			try {
-				date = dateFormat.parse(dateStr);
-			} catch (ParseException e) {
-				return new CellError(e.getMessage());
-			}
-		}
-		localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-		return localDate;
+                date = DATE_FORMAT.parse(value);
+            } catch (ParseException e) {
+                return new CellError("Failed to parse date: " + cellValue + ", error: " + e.getMessage());
+            }
+		} else {
+            return new CellError("Unsupported type for Date parsing");
+        }
+		return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 	}
-	public static CellStyle setFormatForCell(Workbook workbook, String format) {
+	public CellStyle setFormatForCell(Workbook workbook, String format) {
 		CellStyle cellStyle = workbook.createCellStyle();
 		CreationHelper createHelper = workbook.getCreationHelper();
 		cellStyle.setDataFormat(createHelper.createDataFormat().getFormat(format));
 		return cellStyle;
 	}
-	public static Date fromLocalDate(LocalDate date) {
+	public Date fromLocalDate(LocalDate date) {
 		return Date.from(date.atStartOfDay(ZoneId.systemDefault()).toInstant());
 	}
-	public static void setAutoSize(Sheet sheet, int[] columns) {
+	public void setAutoSize(Sheet sheet, int[] columns) {
 		for (int i = 0; i < columns.length; i++) {
 			sheet.autoSizeColumn(columns[i]);
 		}
 	}
-	public static Validator buildValidator() {
+	public Validator buildValidator() {
 		ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
 		return factory.getValidator();
 	}
-	public static void createHeader(Row headerRow, String headers) {
+	public void createHeader(Row headerRow, String headers) {
 		String[] titles = headers.split(",");
 		for (int i = 0; i < titles.length; i++) {
 			String title = titles[i];
 			headerRow.createCell(i).setCellValue(title);
 		}
 	}
-	public static void copyRow(Row sourceRow, Row newRow) {
+	public void copyRow(Row sourceRow, Row newRow) {
         for (int i = 0; i < sourceRow.getLastCellNum(); i++) {
             Cell oldCell = sourceRow.getCell(i);
             if (oldCell != null) {
@@ -198,13 +180,13 @@ public class ExcelHelper {
             }
         }
     }
-	private static void copyCell(Cell oldCell, Cell newCell) {
+	private void copyCell(Cell oldCell, Cell newCell) {
         switch (oldCell.getCellType()) {
             case STRING:
                 newCell.setCellValue(oldCell.getStringCellValue());
                 break;
             case NUMERIC:
-                newCell.setCellValue(oldCell.getNumericCellValue());
+            	handleNumericCell(oldCell, newCell);
                 break;
             case BOOLEAN:
                 newCell.setCellValue(oldCell.getBooleanCellValue());
@@ -222,5 +204,27 @@ public class ExcelHelper {
                 newCell.setCellValue(oldCell.toString());
                 break;
         }
+        
     }
+	private void copyCellFormat(Cell oldCell, Cell newCell) {
+        Workbook newWorkbook = newCell.getSheet().getWorkbook();
+        Short oldCellStyle = oldCell.getCellStyle().getDataFormat();
+
+        CellStyle newCellStyle = styleCache.computeIfAbsent(oldCellStyle, k -> {
+            CellStyle style = newWorkbook.createCellStyle();
+            DataFormat dataFormat = newWorkbook.createDataFormat();
+            style.setDataFormat(dataFormat.getFormat(oldCell.getCellStyle().getDataFormatString()));
+            return style;
+        });
+
+        newCell.setCellStyle(newCellStyle);
+    }
+	private void handleNumericCell(Cell oldCell, Cell newCell) {
+		if (DateUtil.isCellDateFormatted(oldCell)) {
+            copyCellFormat(oldCell, newCell);
+            newCell.setCellValue(oldCell.getDateCellValue());
+        } else {
+            newCell.setCellValue(oldCell.getNumericCellValue());
+        }
+	}
 }

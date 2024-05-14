@@ -22,22 +22,29 @@ import com.hnguyen387.jpa_persistence.globalexceptions.ImportException;
 
 @Component
 public class WriteUserStrategy implements WriteStrategy<ImportedUser>{
+	private ExcelHelper excelHelper;
+	
 	private final String FILE_NAME = "Errors_Import_User_";
 	private final String DATE_TIME_PATTERN = "yyyy-MM-dd'T'HH-mm-ss";
 	private final String EXTENTION = ".xlsx";
 	
+	public void initializeHelper(Workbook workbook) {
+        this.excelHelper = ExcelHelper.createWithWorkbook(workbook);
+    }
+	
 	public void write(Path path, List<ImportedUser> dtos) {
 		try (Workbook workbook = new XSSFWorkbook(XSSFWorkbookType.XLSX)){
+			this.initializeHelper(workbook);
 			Sheet sheet = workbook.createSheet("ErrUsers");
 			Row headerRow = sheet.createRow(0);
 			String headers = "No, Username, RegistrationDate, Email, Level, Active, Message";
-			ExcelHelper.createHeader(headerRow, headers);
+			excelHelper.createHeader(headerRow, headers);
 			int rowNum = 1;
 			for (ImportedUser userDto : dtos) {
 				Row row = sheet.createRow(rowNum++);
 				createRow(row, userDto, workbook);
 			}
-			ExcelHelper.setAutoSize(sheet, new int[] {1,2,3});
+			excelHelper.setAutoSize(sheet, new int[] {1,2,3});
 			DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_TIME_PATTERN);
 			String fileName = FILE_NAME + LocalDateTime.now().format(formatter) + EXTENTION;
 			Path fullPath = path.resolve(fileName);
@@ -53,10 +60,10 @@ public class WriteUserStrategy implements WriteStrategy<ImportedUser>{
 		int i = 0;
 		row.createCell(i++).setCellValue(dto.getId());
 		row.createCell(i++).setCellValue(dto.getUsername());
-		Date date = ExcelHelper.fromLocalDate(dto.getRegistrationDate());
+		Date date = excelHelper.fromLocalDate(dto.getRegistrationDate());
 		Cell dateCell = row.createCell(i++);
 		dateCell.setCellValue(date);
-		dateCell.setCellStyle(ExcelHelper.setFormatForCell(workbook, "yyyy-MM-dd"));
+		dateCell.setCellStyle(excelHelper.setFormatForCell(workbook, "yyyy-MM-dd"));
 		row.createCell(i++).setCellValue(dto.getEmail());
 		row.createCell(i++).setCellValue(dto.getLevel());
 		row.createCell(i++).setCellValue(dto.isActive());
