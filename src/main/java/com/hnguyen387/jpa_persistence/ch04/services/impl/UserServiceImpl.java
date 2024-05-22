@@ -20,6 +20,8 @@ import com.hnguyen387.jpa_persistence.ch04.dtos.PagingAndSortingRecords.MultiSor
 import com.hnguyen387.jpa_persistence.ch04.dtos.PagingAndSortingRecords.SortedField;
 import com.hnguyen387.jpa_persistence.ch04.dtos.SortedPageUser;
 import com.hnguyen387.jpa_persistence.ch04.dtos.UserDto;
+import com.hnguyen387.jpa_persistence.ch04.dtos.UserRecords.DtoV1;
+import com.hnguyen387.jpa_persistence.ch04.dtos.UserRecords.DtoV2;
 import com.hnguyen387.jpa_persistence.ch04.models.User;
 import com.hnguyen387.jpa_persistence.ch04.repos.UserRepository;
 import com.hnguyen387.jpa_persistence.ch04.services.UserService;
@@ -47,7 +49,8 @@ public class UserServiceImpl implements UserService{
 
 	@Override
 	public Set<String> getAllEmails() {
-		return repository.getAllEmails();
+		//return repository.getAllEmails();
+		return null;
 	}
 
 	@Override
@@ -112,4 +115,5 @@ public class UserServiceImpl implements UserService{
 	    BeanUtils.copyProperties(user, dto);
 	    return dto;
 	}
+	
 }

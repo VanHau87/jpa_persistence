@@ -3,8 +3,6 @@ package com.hnguyen387.jpa_persistence.ch04.controllers;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.JpaSort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,7 +13,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.hnguyen387.jpa_persistence.ch04.dtos.PagingAndSortingRecords.MultiSortedPageUsers;
 import com.hnguyen387.jpa_persistence.ch04.dtos.SortedPageUser;
 import com.hnguyen387.jpa_persistence.ch04.dtos.UserDto;
-import com.hnguyen387.jpa_persistence.ch04.models.User;
+import com.hnguyen387.jpa_persistence.ch04.dtos.UserRecords;
+import com.hnguyen387.jpa_persistence.ch04.dtos.UserRecords.DtoV1;
+import com.hnguyen387.jpa_persistence.ch04.dtos.UserRecords.DtoV2;
+import com.hnguyen387.jpa_persistence.ch04.models.projections.BaseUserProjections;
+import com.hnguyen387.jpa_persistence.ch04.models.projections.UserProjections;
 import com.hnguyen387.jpa_persistence.ch04.repos.UserRepository;
 import com.hnguyen387.jpa_persistence.ch04.services.UserService;
 
@@ -38,6 +40,7 @@ public class UserController {
 		List<UserDto> users = userService.findByActiveMultiSort(page);
 		return new ResponseEntity<List<UserDto>>(users, HttpStatus.OK);
 	}
+	/*
 	@PostMapping("queries/v1")
 	public ResponseEntity<Long> testCountByActiveAndLevel(@RequestBody UserDto dto){
 		long count = repository.countByActiveAndByLevel(dto.isActive(), dto.getLevel());
@@ -69,5 +72,23 @@ public class UserController {
 		List<Object[]> results = repository.findByNameAndThenSort(dto.getUsername(), 
 				JpaSort.unsafe("LENGTH(u.email)"));
 		return new ResponseEntity<List<Object[]>>(results, HttpStatus.OK);
+	}
+	@PostMapping("queries/v7")
+	public ResponseEntity<List<UserProjection.EmailOnly>> testProjections(@RequestBody Integer level){
+		List<UserProjection.EmailOnly> results = repository.findByLevel(level);
+		return new ResponseEntity<List<UserProjection.EmailOnly>>(results, HttpStatus.OK);
+	}
+	*/
+	@PostMapping("queries/v7")
+	public ResponseEntity<List<BaseUserProjections>> testProjectionsV1(@RequestBody Boolean isActive){
+		//var result = repository.findByActiveWithQuery(isActive, BaseUserProjections.class);
+		var result = repository.findByActive(isActive, BaseUserProjections.class);
+		return new ResponseEntity<List<BaseUserProjections>>(result, HttpStatus.OK);
+	}
+	@PostMapping("queries/v8")
+	public ResponseEntity<List<UserProjections>> testProjectionsV2(@RequestBody Boolean isActive){
+		//var results = repository.findByActiveWithQuery(isActive, UserProjections.class);
+		var results = repository.findByActive(isActive, UserProjections.class);
+		return new ResponseEntity<List<UserProjections>>(results, HttpStatus.OK);
 	}
 }
