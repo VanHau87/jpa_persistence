@@ -79,6 +79,7 @@ public class UserController {
 		return new ResponseEntity<List<UserProjection.EmailOnly>>(results, HttpStatus.OK);
 	}
 	*/
+	/*
 	@PostMapping("queries/v7")
 	public ResponseEntity<List<BaseUserProjections>> testProjectionsV1(@RequestBody Boolean isActive){
 		//var result = repository.findByActiveWithQuery(isActive, BaseUserProjections.class);
@@ -90,5 +91,11 @@ public class UserController {
 		//var results = repository.findByActiveWithQuery(isActive, UserProjections.class);
 		var results = repository.findByActive(isActive, UserProjections.class);
 		return new ResponseEntity<List<UserProjections>>(results, HttpStatus.OK);
+	}
+	*/
+	@PostMapping("update/email")
+	public ResponseEntity<String> testUpdateEmail(@RequestBody Integer level){
+		int results = userService.lowerCaseEmailByLevel(level);
+		return ResponseEntity.ok(String.format("Program has been updated %d email(s) sucessfully", results));
 	}
 }

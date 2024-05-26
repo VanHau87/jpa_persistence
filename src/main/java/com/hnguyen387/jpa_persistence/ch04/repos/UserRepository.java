@@ -42,6 +42,7 @@ public interface UserRepository extends JpaRepository<User, Long>{
 		List<User> findByActive(boolean active, Pageable pageable);
 		List<User> findByLevel(int level, Sort sort);
 	*/
+	List<User> findByLevel(int level);
 	List<User> findByActive(boolean active, Pageable pageable);
 	/*Query annotation*/
 	/*
@@ -82,7 +83,10 @@ public interface UserRepository extends JpaRepository<User, Long>{
 	List<UserProjections> findByActiveWithQuery(boolean active);
 	*/
 	/*Projections - Generic: DTO record*/
+	/*
 	<T> List<T> findByActive(boolean active, Class<T> type);
 	@Query("select u from User u where u.active = :active")
 	<T> List<T> findByActiveWithQuery(@Param("active") boolean active, Class<T> type);
+	*/
+	
 }

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -114,6 +115,22 @@ public class UserServiceImpl implements UserService{
 	    UserDto dto = new UserDto();
 	    BeanUtils.copyProperties(user, dto);
 	    return dto;
+	}
+	
+	@Transactional
+	@Override
+	public int lowerCaseEmailByLevel(int level) {
+		List<User> users = repository.findByLevel(level);
+		int count = 0;
+		for (User user : users) {
+			String email = user.getEmail();
+			String inLowerCase = email.toLowerCase();
+			if (!email.equals(inLowerCase)) {
+				user.setEmail(inLowerCase);
+				++count;
+			}
+		}
+		return count;
 	}
 	
 }

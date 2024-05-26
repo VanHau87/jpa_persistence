@@ -19,4 +19,5 @@ public interface UserService {
 	List<DtoV2> findByActiveWithQueryV2(boolean isActive);
 	*/
 	List<UserDto> findByActiveMultiSort(MultiSortedPageUsers multiSortedPage);
+	int lowerCaseEmailByLevel(int level);
 }
